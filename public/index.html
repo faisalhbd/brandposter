@@ -294,9 +294,18 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 
 <script>
 const API=window.location.origin+'/api';
+const LS_KEY='brandposter_accounts';
+const LS_LOGS='brandposter_logs';
 let accounts=[],logs=[],postType='text',totalPosts=0,refreshAccId=null;
 const COLORS=[{bg:'#1e3a5f',fg:'#60a5fa'},{bg:'#14532d',fg:'#86efac'},{bg:'#4c1d95',fg:'#c4b5fd'},{bg:'#7f1d1d',fg:'#fca5a5'},{bg:'#713f12',fg:'#fde68a'},{bg:'#134e4a',fg:'#99f6e4'},{bg:'#1e1b4b',fg:'#a5b4fc'},{bg:'#831843',fg:'#f9a8d4'},{bg:'#065f46',fg:'#6ee7b7'}];
 function ci(i){return COLORS[i%COLORS.length]}
+
+function saveLocal(){localStorage.setItem(LS_KEY,JSON.stringify(accounts));localStorage.setItem(LS_LOGS,JSON.stringify(logs));}
+function loadLocal(){
+  try{accounts=JSON.parse(localStorage.getItem(LS_KEY)||'[]');}catch{accounts=[];}
+  try{logs=JSON.parse(localStorage.getItem(LS_LOGS)||'[]');}catch{logs=[];}
+  totalPosts=logs.filter(l=>l.status==='ok').length;
+}
 
 function showPage(id,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -306,9 +315,8 @@ function showPage(id,btn){
   if(id==='logs')renderLogs();
 }
 
-async function loadAccounts(){
-  try{const r=await fetch(`${API}/accounts`);accounts=await r.json();renderAccounts();renderChecklist();updateStats();}
-  catch(e){showToast('Server connection error — পেজ refresh করুন','fail');}
+function loadAccounts(){
+  loadLocal();renderAccounts();renderChecklist();updateStats();
 }
 
 function toggleCredBox(){
@@ -371,11 +379,21 @@ async function addAccount(){
   resultEl.textContent=appId&&appSecret?'🔄 Permanent token বানানো হচ্ছে...':'⏳ Account যোগ করা হচ্ছে...';
 
   try{
-    const r=await fetch(`${API}/accounts`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,type,pageId,token,appId,appSecret})});
-    const d=await r.json();
-    if(d.error){resultEl.className='token-result err';resultEl.textContent='❌ '+d.error;return;}
-    accounts.push(d);
-    const ti=d.tokenInfo;
+    // Token convert via server (server doesn't store anything)
+    let finalToken=token, tokenInfo={type:'short',expiresAt:'~1 ঘণ্টা'};
+    if(appId&&appSecret){
+      resultEl.style.display='block';resultEl.className='token-result warn';
+      resultEl.textContent='🔄 Permanent token বানানো হচ্ছে...';
+      try{
+        const r=await fetch(`${API}/convert-token`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,pageId,appId,appSecret})});
+        const d=await r.json();
+        if(d.token){finalToken=d.token;tokenInfo=d.tokenInfo;}
+      }catch(e2){console.log('Convert failed',e2.message);}
+    }
+    const newAcc={id:Date.now(),name,type,pageId,token:finalToken,appId,appSecret,tokenInfo,active:true,hasCredentials:!!(appId&&appSecret)};
+    accounts.push(newAcc);
+    saveLocal();
+    const ti=tokenInfo;
     if(ti?.type==='permanent'){
       resultEl.className='token-result ok';
       resultEl.textContent='✅ Permanent Page Token! এই token কখনো expire হবে না।';
@@ -421,14 +439,22 @@ async function doRefresh(){
   resultEl.textContent='🔄 Token convert হচ্ছে...';
 
   try{
-    const body={newToken};
-    if(appId&&appId!=='(saved)')body.appId=appId;
-    if(appSecret)body.appSecret=appSecret;
-    const r=await fetch(`${API}/accounts/${refreshAccId}/refresh`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-    const d=await r.json();
     const acc=accounts.find(a=>a.id===refreshAccId);
-    if(acc&&d.tokenInfo)acc.tokenInfo=d.tokenInfo;
-    const ti=d.tokenInfo;
+    if(!acc)return;
+    const useAppId=(appId&&appId!=='(saved)')?appId:acc.appId;
+    const useSecret=appSecret||acc.appSecret;
+    let finalToken=newToken, tokenInfo={type:'short',expiresAt:'~1 ঘণ্টা'};
+    if(useAppId&&useSecret){
+      resultEl.style.display='block';resultEl.className='token-result warn';resultEl.textContent='🔄 Converting...';
+      try{
+        const r=await fetch(`${API}/convert-token`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:newToken,pageId:acc.pageId,appId:useAppId,appSecret:useSecret})});
+        const d=await r.json();
+        if(d.token){finalToken=d.token;tokenInfo=d.tokenInfo;}
+      }catch(e2){console.log('Convert failed',e2.message);}
+    }
+    acc.token=finalToken;acc.tokenInfo=tokenInfo;
+    saveLocal();
+    const ti=tokenInfo;
     if(ti?.type==='permanent'){resultEl.className='token-result ok';resultEl.textContent='✅ Permanent token!';}
     else if(ti?.type==='long-lived'){resultEl.className='token-result ok';resultEl.textContent=`✅ Long-lived (${ti.expiresAt})`;}
     else{resultEl.className='token-result warn';resultEl.textContent='⚠ Short token — App Secret দাও permanent এর জন্য';}
@@ -439,27 +465,27 @@ async function doRefresh(){
   finally{btn.textContent='🔄 Refresh করো';btn.disabled=false;}
 }
 
-async function removeAcc(id){
+function removeAcc(id){
   if(!confirm('Remove করবে?'))return;
-  await fetch(`${API}/accounts/${id}`,{method:'DELETE'});
   accounts=accounts.filter(a=>a.id!==id);
-  renderAccounts();renderChecklist();updateStats();
+  saveLocal();renderAccounts();renderChecklist();updateStats();
   showToast('Removed','info');
 }
-async function toggleAcc(id){
-  const r=await fetch(`${API}/accounts/${id}`,{method:'PATCH'});
-  const d=await r.json();
-  const a=accounts.find(a=>a.id===id);if(a)a.active=d.active;
+function toggleAcc(id){
+  const a=accounts.find(a=>a.id===id);
+  if(a){a.active=!a.active;saveLocal();}
   renderAccounts();updateStats();
 }
 async function testAcc(id){
   showToast('Testing...','info');
-  const r=await fetch(`${API}/accounts/${id}/test`);
-  const d=await r.json();
-  if(d.ok)showToast(`✅ Connected: ${d.data.name}`,'ok');
-  else showToast('❌ '+d.error,'fail');
-  const a=accounts.find(a=>a.id===id);if(a)a.active=d.ok;
-  renderAccounts();
+  const acc=accounts.find(a=>a.id===id);if(!acc)return;
+  try{
+    const r=await fetch(`${API}/test`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:acc.token,pageId:acc.pageId})});
+    const d=await r.json();
+    if(d.ok){showToast(`✅ Connected: ${d.name}`,'ok');acc.active=true;}
+    else{showToast('❌ '+d.error,'fail');acc.active=false;}
+    saveLocal();renderAccounts();
+  }catch(e){showToast('❌ Error: '+e.message,'fail');}
 }
 
 function renderChecklist(){
@@ -504,29 +530,31 @@ async function sendPost(){
   btn.disabled=true;btn.textContent='⏳ Posting...';fill.style.width='20%';
   let results=[];
   try{
+    // Build accounts data to send (token+pageId per account)
+    const selectedAccs=selected.map(id=>accounts.find(a=>String(a.id)===String(id))).filter(Boolean).map(a=>({id:a.id,name:a.name,token:a.token,pageId:a.pageId}));
     if(postType==='text'){
       if(!msg){showToast('Message লেখো!','fail');return;}
       fill.style.width='50%';
-      const r=await fetch(`${API}/post/text`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accountIds:selected,message:msg})});
+      const r=await fetch(`${API}/post/text`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accounts:selectedAccs,message:msg})});
       results=(await r.json()).results;
     }else if(postType==='image'){
       const f=document.getElementById('img-file').files[0];
       if(!f){showToast('Image select করো!','fail');return;}
       fill.style.width='40%';
-      const fd=new FormData();fd.append('image',f);fd.append('message',msg);fd.append('accountIds',JSON.stringify(selected));
+      const fd=new FormData();fd.append('image',f);fd.append('message',msg);fd.append('accounts',JSON.stringify(selectedAccs));
       const r=await fetch(`${API}/post/image`,{method:'POST',body:fd});
       results=(await r.json()).results;
     }else{
       const f=document.getElementById('vid-file').files[0];
       if(!f){showToast('Video select করো!','fail');return;}
       fill.style.width='30%';showToast('Video upload হচ্ছে...','info');
-      const fd=new FormData();fd.append('video',f);fd.append('message',msg);fd.append('title',document.getElementById('vid-title').value);fd.append('accountIds',JSON.stringify(selected));
+      const fd=new FormData();fd.append('video',f);fd.append('message',msg);fd.append('title',document.getElementById('vid-title').value);fd.append('accounts',JSON.stringify(selectedAccs));
       const r=await fetch(`${API}/post/video`,{method:'POST',body:fd});
       results=(await r.json()).results;
     }
     fill.style.width='100%';
     results.forEach(r=>logs.unshift({id:Date.now()+Math.random(),acc:r.name,status:r.ok?'ok':'fail',time:new Date().toLocaleString('bn-BD'),text:msg.slice(0,80)||'[media]',err:r.error,type:postType}));
-    totalPosts+=results.filter(r=>r.ok).length;updateStats();
+    totalPosts+=results.filter(r=>r.ok).length;saveLocal();updateStats();
     const ok=results.filter(r=>r.ok).length,fail=results.filter(r=>!r.ok).length;
     if(ok>0)showToast(`✅ ${ok}টি account-এ post হয়েছে!`,'ok');
     if(fail>0)showToast(`❌ ${fail}টি fail — History দেখো`,'fail');
@@ -539,7 +567,7 @@ function renderLogs(){
   if(!logs.length){c.innerHTML='<div class="empty"><div class="icon">📋</div>History নেই</div>';return;}
   c.innerHTML=logs.map(l=>`<div class="log-item"><div class="log-icon ${l.status}">${l.status==='ok'?'✓':'✕'}</div><div class="log-body"><div class="log-top"><span class="log-name">${l.acc}</span><span class="badge ${l.status}">${l.status==='ok'?'সফল':'Failed'}</span><span style="font-size:11px;padding:2px 7px;background:var(--bg3);border-radius:99px;color:var(--text3)">${l.type||'text'}</span></div><div class="log-time">${l.time}</div>${l.text?`<div class="log-preview">${l.text}</div>`:''}${l.err?`<div class="log-err">⚠ ${l.err}</div>`:''}</div></div>`).join('');
 }
-function clearLogs(){logs=[];renderLogs();}
+function clearLogs(){logs=[];saveLocal();renderLogs();}
 function updateStats(){document.getElementById('s-acc').textContent=accounts.length;document.getElementById('s-posts').textContent=totalPosts;}
 function closeModal(){document.getElementById('modal').classList.remove('open');['m-name','m-pid','m-token','m-appid','m-appsecret'].forEach(id=>document.getElementById(id).value='');document.getElementById('token-result').style.display='none';document.getElementById('cred-box').classList.remove('open');}
 document.getElementById('modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
