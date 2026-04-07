@@ -293,7 +293,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 <div class="toast-wrap" id="toasts"></div>
 
 <script>
-const API='http://localhost:3000/api';
+const API=window.location.origin+'/api';
 let accounts=[],logs=[],postType='text',totalPosts=0,refreshAccId=null;
 const COLORS=[{bg:'#1e3a5f',fg:'#60a5fa'},{bg:'#14532d',fg:'#86efac'},{bg:'#4c1d95',fg:'#c4b5fd'},{bg:'#7f1d1d',fg:'#fca5a5'},{bg:'#713f12',fg:'#fde68a'},{bg:'#134e4a',fg:'#99f6e4'},{bg:'#1e1b4b',fg:'#a5b4fc'},{bg:'#831843',fg:'#f9a8d4'},{bg:'#065f46',fg:'#6ee7b7'}];
 function ci(i){return COLORS[i%COLORS.length]}
@@ -308,7 +308,7 @@ function showPage(id,btn){
 
 async function loadAccounts(){
   try{const r=await fetch(`${API}/accounts`);accounts=await r.json();renderAccounts();renderChecklist();updateStats();}
-  catch(e){showToast('Server চালু করো: node server.js','fail');}
+  catch(e){showToast('Server connection error — পেজ refresh করুন','fail');}
 }
 
 function toggleCredBox(){
