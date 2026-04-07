@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BrandPoster</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0f1117;--bg2:#161b27;--bg3:#1e2535;--bg4:#252d3d;--border:#2a3348;--border2:#3a4560;--blue:#3b82f6;--blue2:#2563eb;--green:#22c55e;--red:#ef4444;--orange:#f59e0b;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--radius:12px;--radius-sm:8px}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:220px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:50}
+.main{margin-left:220px;min-height:100vh;padding:28px}
+.logo{padding:24px 20px 20px;border-bottom:1px solid var(--border)}
+.logo h1{font-size:18px;font-weight:700}.logo h1 span{color:var(--blue)}
+.logo p{font-size:11px;color:var(--text3);margin-top:3px}
+.nav{padding:12px 8px;flex:1}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;color:var(--text2);transition:.15s;margin-bottom:2px;border:none;background:none;width:100%;text-align:left}
+.nav-item:hover{background:var(--bg3);color:var(--text)}.nav-item.active{background:var(--bg4);color:var(--blue)}
+.nav-item svg{width:16px;height:16px;flex-shrink:0}
+.sidebar-footer{padding:16px;border-top:1px solid var(--border)}
+.stats-mini{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.stat-mini{background:var(--bg3);border-radius:var(--radius-sm);padding:8px;text-align:center}
+.stat-mini .n{font-size:18px;font-weight:700}.stat-mini .l{font-size:10px;color:var(--text3);margin-top:1px}
+.page{display:none}.page.active{display:block}
+.page-title{font-size:20px;font-weight:600;margin-bottom:20px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+.card-title{font-size:14px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.acc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;margin-bottom:16px}
+.acc-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;transition:.15s}
+.acc-card:hover{border-color:var(--border2)}
+.acc-top{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.acc-avatar{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0}
+.acc-info .name{font-size:14px;font-weight:600}.acc-info .sub{font-size:11px;color:var(--text3);margin-top:2px}
+.status-row{display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.dot{width:8px;height:8px;border-radius:50%}.dot.green{background:var(--green)}.dot.red{background:var(--red)}
+.token-badge{font-size:10px;padding:2px 7px;border-radius:99px;font-weight:600}
+.token-badge.permanent{background:#14532d;color:#86efac}
+.token-badge.long{background:#1e3a5f;color:#93c5fd}
+.token-badge.short{background:#78350f;color:#fde68a}
+.cred-badge{font-size:10px;padding:2px 7px;border-radius:99px;font-weight:600;background:#4c1d95;color:#c4b5fd}
+.acc-btns{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+.btn-xs{padding:5px 10px;font-size:11px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;transition:.15s}
+.btn-xs:hover{background:var(--bg3);color:var(--text)}
+.btn-xs.danger{border-color:#7f1d1d;color:var(--red)}.btn-xs.danger:hover{background:#7f1d1d22}
+.btn-xs.primary{background:var(--blue);color:#fff;border-color:var(--blue)}.btn-xs.primary:hover{opacity:.9}
+.btn-xs.purple{background:#4c1d95;color:#c4b5fd;border-color:#4c1d95}
+.add-acc-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:20px;background:transparent;border:1.5px dashed var(--border2);border-radius:var(--radius);color:var(--text3);font-size:13px;cursor:pointer;transition:.15s}
+.add-acc-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--bg3)}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;color:var(--text2);margin-bottom:5px;font-weight:500}
+.field input,.field select,.field textarea{width:100%;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:13px;transition:.15s;font-family:inherit}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--blue)}
+.field textarea{resize:vertical;min-height:110px;line-height:1.6}
+.field input[type=file]{padding:8px;cursor:pointer}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{padding:10px 18px;border-radius:var(--radius-sm);font-size:13px;cursor:pointer;transition:.15s;border:none;font-weight:500}
+.btn-primary{background:var(--blue);color:#fff}.btn-primary:hover{background:var(--blue2)}.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-ghost{background:transparent;border:1px solid var(--border2);color:var(--text2)}.btn-ghost:hover{background:var(--bg3);color:var(--text)}
+.divider{border:none;border-top:1px solid var(--border);margin:16px 0}
+.section-label{font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.optional-box{background:var(--bg4);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:14px;margin-bottom:14px}
+.optional-box .header{display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:0}
+.optional-box .header span{font-size:13px;font-weight:500}
+.optional-box .header .badge-opt{font-size:10px;padding:2px 8px;border-radius:99px;background:#14532d;color:#86efac}
+.optional-box .body{margin-top:12px;display:none}
+.optional-box.open .body{display:block}
+.optional-box .header svg{transition:.2s;flex-shrink:0}
+.optional-box.open .header svg{transform:rotate(180deg)}
+.info-tip{font-size:11px;color:var(--text3);line-height:1.6;margin-bottom:10px}
+.info-tip a{color:#60a5fa}
+.type-tabs{display:flex;gap:6px;margin-bottom:16px;background:var(--bg3);padding:4px;border-radius:var(--radius-sm);width:fit-content}
+.type-tab{padding:7px 16px;border-radius:6px;font-size:13px;cursor:pointer;border:none;background:transparent;color:var(--text2);transition:.15s;font-weight:500}
+.type-tab.active{background:var(--bg4);color:var(--blue);border:1px solid var(--border2)}
+.compose-grid{display:grid;grid-template-columns:1fr 300px;gap:16px}
+@media(max-width:720px){.compose-grid{grid-template-columns:1fr}}
+.acc-checklist{display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto}
+.chk-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--radius-sm);cursor:pointer;transition:.15s;border:1px solid transparent}
+.chk-item:hover{background:var(--bg3)}.chk-item.selected{background:var(--bg4);border-color:#3b82f633}
+.chk-item input[type=checkbox]{width:15px;height:15px;accent-color:var(--blue);flex-shrink:0}
+.chk-avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.chk-info .n{font-size:13px;font-weight:500}.chk-info .t{font-size:11px;color:var(--text3)}
+.upload-area{border:2px dashed var(--border2);border-radius:var(--radius-sm);padding:24px;text-align:center;cursor:pointer;transition:.15s;position:relative}
+.upload-area:hover{border-color:var(--blue);background:var(--bg4)}
+.upload-area input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.upload-area .icon{font-size:28px;margin-bottom:8px}
+.upload-area p{font-size:13px;color:var(--text2)}.upload-area .hint{font-size:11px;color:var(--text3);margin-top:4px}
+.file-preview{margin-top:10px;padding:10px;background:var(--bg4);border-radius:var(--radius-sm);display:none;align-items:center;gap:10px}
+.file-preview .fname{font-size:12px;flex:1}.file-preview .fsize{font-size:11px;color:var(--text3)}
+.progress-bar{width:100%;height:4px;background:var(--bg4);border-radius:2px;overflow:hidden;margin-top:12px;display:none}
+.progress-fill{height:100%;background:var(--blue);border-radius:2px;transition:width .3s;width:0%}
+.char-row{display:flex;justify-content:space-between;margin-top:4px}
+.char-count{font-size:11px;color:var(--text3)}
+.log-list{display:flex;flex-direction:column;gap:8px}
+.log-item{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;display:flex;align-items:flex-start;gap:12px}
+.log-icon{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.log-icon.ok{background:#14532d;color:var(--green)}.log-icon.fail{background:#7f1d1d;color:var(--red)}
+.log-body{flex:1;min-width:0}
+.log-top{display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap}
+.log-name{font-size:13px;font-weight:600}
+.badge{display:inline-flex;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:500}
+.badge.ok{background:#14532d;color:var(--green)}.badge.fail{background:#7f1d1d;color:var(--red)}
+.log-time{font-size:11px;color:var(--text3)}
+.log-preview{font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:500px}
+.log-err{font-size:11px;color:var(--red);margin-top:3px}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:100;display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:24px;width:min(520px,94vw);max-height:92vh;overflow-y:auto}
+.modal h3{font-size:16px;font-weight:600;margin-bottom:4px}
+.modal .subtitle{font-size:12px;color:var(--text3);margin-bottom:18px}
+.modal-btns{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.token-result{padding:12px;border-radius:var(--radius-sm);font-size:12px;margin-top:10px;display:none;line-height:1.6}
+.token-result.ok{background:#14532d;color:#86efac;border:1px solid #166534}
+.token-result.warn{background:#78350f;color:#fde68a;border:1px solid #92400e}
+.token-result.err{background:#7f1d1d;color:#fca5a5;border:1px solid #991b1b}
+.toast-wrap{position:fixed;bottom:20px;right:20px;z-index:999;display:flex;flex-direction:column;gap:8px}
+.toast{padding:12px 16px;border-radius:var(--radius-sm);font-size:13px;max-width:320px;animation:slideIn .2s ease;pointer-events:none}
+.toast.ok{background:#14532d;color:#86efac;border:1px solid #166534}
+.toast.fail{background:#7f1d1d;color:#fca5a5;border:1px solid #991b1b}
+.toast.info{background:var(--bg3);color:var(--text);border:1px solid var(--border2)}
+@keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
+.empty{text-align:center;padding:40px 20px;color:var(--text3);font-size:14px}
+.empty .icon{font-size:36px;margin-bottom:10px}
+.select-row{display:flex;gap:6px;margin-top:10px}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="logo"><h1><span>Brand</span>Poster</h1><p>Multi-Account Manager</p></div>
+  <nav class="nav">
+    <button class="nav-item active" onclick="showPage('accounts',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Accounts
+    </button>
+    <button class="nav-item" onclick="showPage('compose',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      New Post
+    </button>
+    <button class="nav-item" onclick="showPage('logs',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Post History
+    </button>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="stats-mini">
+      <div class="stat-mini"><div class="n" id="s-acc">0</div><div class="l">Accounts</div></div>
+      <div class="stat-mini"><div class="n" id="s-posts">0</div><div class="l">Posts</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- Accounts -->
+  <div class="page active" id="page-accounts">
+    <div class="page-title">📱 Accounts</div>
+    <div class="acc-grid" id="acc-grid"></div>
+    <button class="add-acc-btn" onclick="openAddModal()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      নতুন Account যোগ করো
+    </button>
+  </div>
+
+  <!-- Compose -->
+  <div class="page" id="page-compose">
+    <div class="page-title">✍️ New Post</div>
+    <div class="compose-grid">
+      <div>
+        <div class="card">
+          <div class="card-title">Post Type</div>
+          <div class="type-tabs">
+            <button class="type-tab active" onclick="setType('text',this)">📝 Text</button>
+            <button class="type-tab" onclick="setType('image',this)">🖼️ Image</button>
+            <button class="type-tab" onclick="setType('video',this)">🎥 Video</button>
+          </div>
+          <div class="field">
+            <label id="msg-label">Post Message / Caption</label>
+            <textarea id="post-msg" placeholder="তোমার post লেখো..." oninput="updateChar()"></textarea>
+            <div class="char-row"><span style="font-size:11px;color:var(--text3)">Limit: 63,206</span><span class="char-count"><span id="char-n">0</span> chars</span></div>
+          </div>
+          <div id="img-section" style="display:none">
+            <div class="field"><label>Image (JPG, PNG — max 4MB)</label>
+              <div class="upload-area"><input type="file" id="img-file" accept="image/*" onchange="previewFile('img')"><div class="icon">🖼️</div><p>Click করো অথবা drag করো</p><div class="hint">JPG, PNG, GIF</div></div>
+              <div class="file-preview" id="img-preview"><span style="font-size:18px">🖼️</span><span class="fname" id="img-fname"></span><span class="fsize" id="img-fsize"></span></div>
+            </div>
+          </div>
+          <div id="vid-section" style="display:none">
+            <div class="field"><label>Video Title (optional)</label><input type="text" id="vid-title" placeholder="Video title"></div>
+            <div class="field"><label>Video (MP4 — max 100MB)</label>
+              <div class="upload-area"><input type="file" id="vid-file" accept="video/*" onchange="previewFile('vid')"><div class="icon">🎥</div><p>Click করো অথবা drag করো</p><div class="hint">MP4, MOV</div></div>
+              <div class="file-preview" id="vid-preview"><span style="font-size:18px">🎥</span><span class="fname" id="vid-fname"></span><span class="fsize" id="vid-fsize"></span></div>
+            </div>
+          </div>
+          <div class="progress-bar" id="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <button class="btn btn-primary" id="post-btn" onclick="sendPost()">🚀 Post করো</button>
+            <button class="btn btn-ghost" onclick="clearCompose()">Clear</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card" style="position:sticky;top:20px">
+          <div class="card-title">কোন Accounts-এ post যাবে?</div>
+          <div id="acc-checklist" class="acc-checklist"></div>
+          <div class="select-row"><button class="btn-xs" onclick="selectAll(true)">সব</button><button class="btn-xs" onclick="selectAll(false)">কোনটা না</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Logs -->
+  <div class="page" id="page-logs">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div class="page-title" style="margin:0">📊 Post History</div>
+      <button class="btn btn-ghost" onclick="clearLogs()">Clear</button>
+    </div>
+    <div id="log-list" class="log-list"></div>
+  </div>
+
+</div>
+
+<!-- Add Account Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3>নতুন Account যোগ করো</h3>
+    <p class="subtitle">প্রতিটা Facebook ID-র জন্য আলাদা credentials</p>
+
+    <div class="field"><label>Account / Brand নাম *</label><input type="text" id="m-name" placeholder="Gotrend Gadget"></div>
+    <div class="field"><label>Type</label>
+      <select id="m-type"><option value="page">Facebook Page</option><option value="business">Business Account</option></select>
+    </div>
+    <div class="field"><label>Page ID *</label><input type="text" id="m-pid" placeholder="122128565583091357"></div>
+    <div class="field"><label>Short Access Token * <span style="color:var(--text3);font-weight:400">— Graph API Explorer থেকে নাও</span></label>
+      <input type="text" id="m-token" placeholder="EAABwzLixnjY...">
+    </div>
+
+    <hr class="divider">
+
+    <!-- Per-account App Credentials (collapsible) -->
+    <div class="optional-box" id="cred-box">
+      <div class="header" onclick="toggleCredBox()">
+        <span>🔑 App Credentials <span style="color:var(--text3);font-weight:400;font-size:12px">— Permanent token এর জন্য</span></span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="badge-opt">♾ Permanent</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+      <div class="body">
+        <p class="info-tip">
+          এই Facebook ID-র Meta App থেকে নাও:<br>
+          <a href="https://developers.facebook.com" target="_blank">developers.facebook.com</a> → তোমার App → <b>Settings → Basic</b><br>
+          ⚠ প্রতিটা Facebook ID-র <b>আলাদা App</b> থেকে নিতে হবে
+        </p>
+        <div class="field-row">
+          <div class="field"><label>App ID</label><input type="text" id="m-appid" placeholder="926187340288936"></div>
+          <div class="field"><label>App Secret</label><input type="password" id="m-appsecret" placeholder="••••••••••••••••"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="token-result" id="token-result"></div>
+
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="closeModal()">বাতিল</button>
+      <button class="btn btn-primary" id="add-btn" onclick="addAccount()">✓ যোগ করো</button>
+    </div>
+  </div>
+</div>
+
+<!-- Refresh/Credentials Modal -->
+<div class="modal-overlay" id="refresh-modal">
+  <div class="modal">
+    <h3 id="rm-title">🔄 Token Refresh</h3>
+    <p class="subtitle" id="rm-subtitle"></p>
+    <div class="field"><label>নতুন Short Token *</label><input type="text" id="rm-token" placeholder="Graph API Explorer থেকে নতুন token নাও"></div>
+    <div id="rm-cred-section">
+      <hr class="divider">
+      <div class="section-label">App Credentials (এই account-এর)</div>
+      <div class="field-row">
+        <div class="field"><label>App ID</label><input type="text" id="rm-appid" placeholder="App ID"></div>
+        <div class="field"><label>App Secret</label><input type="password" id="rm-appsecret" placeholder="App Secret"></div>
+      </div>
+      <p style="font-size:11px;color:var(--text3)">⚠ App Secret না দিলে 60-দিনের token হবে</p>
+    </div>
+    <div class="token-result" id="rm-result"></div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="document.getElementById('refresh-modal').classList.remove('open')">বাতিল</button>
+      <button class="btn btn-primary" id="rm-btn" onclick="doRefresh()">🔄 Refresh করো</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+const API='http://localhost:3000/api';
+let accounts=[],logs=[],postType='text',totalPosts=0,refreshAccId=null;
+const COLORS=[{bg:'#1e3a5f',fg:'#60a5fa'},{bg:'#14532d',fg:'#86efac'},{bg:'#4c1d95',fg:'#c4b5fd'},{bg:'#7f1d1d',fg:'#fca5a5'},{bg:'#713f12',fg:'#fde68a'},{bg:'#134e4a',fg:'#99f6e4'},{bg:'#1e1b4b',fg:'#a5b4fc'},{bg:'#831843',fg:'#f9a8d4'},{bg:'#065f46',fg:'#6ee7b7'}];
+function ci(i){return COLORS[i%COLORS.length]}
+
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');btn.classList.add('active');
+  if(id==='compose')renderChecklist();
+  if(id==='logs')renderLogs();
+}
+
+async function loadAccounts(){
+  try{const r=await fetch(`${API}/accounts`);accounts=await r.json();renderAccounts();renderChecklist();updateStats();}
+  catch(e){showToast('Server চালু করো: node server.js','fail');}
+}
+
+function toggleCredBox(){
+  document.getElementById('cred-box').classList.toggle('open');
+}
+
+function tokenBadge(info){
+  if(!info)return '<span class="token-badge short">Short</span>';
+  if(info.type==='permanent')return '<span class="token-badge permanent">♾ Permanent</span>';
+  if(info.type==='long-lived')return '<span class="token-badge long">60 দিন</span>';
+  return '<span class="token-badge short">⚠ Short ~1hr</span>';
+}
+
+function renderAccounts(){
+  const g=document.getElementById('acc-grid');
+  if(!accounts.length){g.innerHTML='<div class="empty"><div class="icon">📭</div>কোনো account নেই</div>';return;}
+  g.innerHTML=accounts.map((a,i)=>{
+    const c=ci(i);
+    const init=a.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    const credBadge=a.hasCredentials?'<span class="cred-badge">🔑 App linked</span>':'';
+    return `<div class="acc-card">
+      <div class="acc-top">
+        <div class="acc-avatar" style="background:${c.bg};color:${c.fg}">${init}</div>
+        <div class="acc-info"><div class="name">${a.name}</div><div class="sub">ID: ${a.pageId}</div></div>
+      </div>
+      <div class="status-row">
+        <div class="dot ${a.active?'green':'red'}"></div>
+        <span style="font-size:12px;color:var(--text2)">${a.active?'Active':'Inactive'}</span>
+        ${tokenBadge(a.tokenInfo)}
+        ${credBadge}
+      </div>
+      <div class="acc-btns">
+        <button class="btn-xs" onclick="testAcc(${a.id})">🔌 Test</button>
+        <button class="btn-xs purple" onclick="openRefresh(${a.id})">🔄 Refresh</button>
+        <button class="btn-xs" onclick="toggleAcc(${a.id})">${a.active?'Pause':'Activate'}</button>
+        <button class="btn-xs danger" onclick="removeAcc(${a.id})">Remove</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openAddModal(){
+  document.getElementById('modal').classList.add('open');
+  document.getElementById('token-result').style.display='none';
+}
+
+async function addAccount(){
+  const name=document.getElementById('m-name').value.trim();
+  const type=document.getElementById('m-type').value;
+  const pageId=document.getElementById('m-pid').value.trim();
+  const token=document.getElementById('m-token').value.trim();
+  const appId=document.getElementById('m-appid').value.trim();
+  const appSecret=document.getElementById('m-appsecret').value.trim();
+  if(!name||!pageId||!token){showToast('Name, Page ID ও Token দরকার!','fail');return;}
+
+  const btn=document.getElementById('add-btn');
+  const resultEl=document.getElementById('token-result');
+  btn.textContent='⏳ Processing...';btn.disabled=true;
+  resultEl.style.display='block';resultEl.className='token-result warn';
+  resultEl.textContent=appId&&appSecret?'🔄 Permanent token বানানো হচ্ছে...':'⏳ Account যোগ করা হচ্ছে...';
+
+  try{
+    const r=await fetch(`${API}/accounts`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,type,pageId,token,appId,appSecret})});
+    const d=await r.json();
+    if(d.error){resultEl.className='token-result err';resultEl.textContent='❌ '+d.error;return;}
+    accounts.push(d);
+    const ti=d.tokenInfo;
+    if(ti?.type==='permanent'){
+      resultEl.className='token-result ok';
+      resultEl.textContent='✅ Permanent Page Token! এই token কখনো expire হবে না।';
+    } else if(ti?.type==='long-lived'){
+      resultEl.className='token-result ok';
+      resultEl.textContent=`✅ Long-lived token (${ti.expiresAt})`;
+    } else if(ti?.warning){
+      resultEl.className='token-result warn';
+      resultEl.textContent='⚠ Short token — App credentials দিলে permanent হতো। Error: '+ti.warning;
+    } else {
+      resultEl.className='token-result warn';
+      resultEl.textContent='⚠ Short token (~1 ঘণ্টা) — App ID/Secret দাও permanent token এর জন্য।';
+    }
+    renderAccounts();updateStats();
+    showToast(`✅ ${name} যোগ হয়েছে!`,'ok');
+    setTimeout(closeModal,2500);
+  }catch(e){resultEl.className='token-result err';resultEl.textContent='❌ Error: '+e.message;}
+  finally{btn.textContent='✓ যোগ করো';btn.disabled=false;}
+}
+
+function openRefresh(id){
+  refreshAccId=id;
+  const acc=accounts.find(a=>a.id===id);
+  document.getElementById('rm-title').textContent='🔄 Token Refresh — '+acc.name;
+  document.getElementById('rm-subtitle').textContent='নতুন short token দাও, auto convert হবে';
+  document.getElementById('rm-token').value='';
+  document.getElementById('rm-appid').value=acc.hasCredentials?'(saved)':'';
+  document.getElementById('rm-appsecret').value='';
+  document.getElementById('rm-result').style.display='none';
+  document.getElementById('refresh-modal').classList.add('open');
+}
+
+async function doRefresh(){
+  const newToken=document.getElementById('rm-token').value.trim();
+  const appId=document.getElementById('rm-appid').value.trim();
+  const appSecret=document.getElementById('rm-appsecret').value.trim();
+  if(!newToken){showToast('নতুন token দাও!','fail');return;}
+
+  const btn=document.getElementById('rm-btn');
+  const resultEl=document.getElementById('rm-result');
+  btn.textContent='⏳ Processing...';btn.disabled=true;
+  resultEl.style.display='block';resultEl.className='token-result warn';
+  resultEl.textContent='🔄 Token convert হচ্ছে...';
+
+  try{
+    const body={newToken};
+    if(appId&&appId!=='(saved)')body.appId=appId;
+    if(appSecret)body.appSecret=appSecret;
+    const r=await fetch(`${API}/accounts/${refreshAccId}/refresh`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d=await r.json();
+    const acc=accounts.find(a=>a.id===refreshAccId);
+    if(acc&&d.tokenInfo)acc.tokenInfo=d.tokenInfo;
+    const ti=d.tokenInfo;
+    if(ti?.type==='permanent'){resultEl.className='token-result ok';resultEl.textContent='✅ Permanent token!';}
+    else if(ti?.type==='long-lived'){resultEl.className='token-result ok';resultEl.textContent=`✅ Long-lived (${ti.expiresAt})`;}
+    else{resultEl.className='token-result warn';resultEl.textContent='⚠ Short token — App Secret দাও permanent এর জন্য';}
+    renderAccounts();
+    showToast('✅ Token refresh হয়েছে','ok');
+    setTimeout(()=>document.getElementById('refresh-modal').classList.remove('open'),2000);
+  }catch(e){resultEl.className='token-result err';resultEl.textContent='❌ '+e.message;}
+  finally{btn.textContent='🔄 Refresh করো';btn.disabled=false;}
+}
+
+async function removeAcc(id){
+  if(!confirm('Remove করবে?'))return;
+  await fetch(`${API}/accounts/${id}`,{method:'DELETE'});
+  accounts=accounts.filter(a=>a.id!==id);
+  renderAccounts();renderChecklist();updateStats();
+  showToast('Removed','info');
+}
+async function toggleAcc(id){
+  const r=await fetch(`${API}/accounts/${id}`,{method:'PATCH'});
+  const d=await r.json();
+  const a=accounts.find(a=>a.id===id);if(a)a.active=d.active;
+  renderAccounts();updateStats();
+}
+async function testAcc(id){
+  showToast('Testing...','info');
+  const r=await fetch(`${API}/accounts/${id}/test`);
+  const d=await r.json();
+  if(d.ok)showToast(`✅ Connected: ${d.data.name}`,'ok');
+  else showToast('❌ '+d.error,'fail');
+  const a=accounts.find(a=>a.id===id);if(a)a.active=d.ok;
+  renderAccounts();
+}
+
+function renderChecklist(){
+  const c=document.getElementById('acc-checklist');
+  if(!accounts.length){c.innerHTML='<div style="color:var(--text3);font-size:13px;padding:10px">Account add করো</div>';return;}
+  c.innerHTML=accounts.map((a,i)=>{
+    const ci2=ci(i);
+    const init=a.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    return `<label class="chk-item ${a.active?'selected':''}">
+      <input type="checkbox" ${a.active?'checked':''} data-id="${a.id}">
+      <div class="chk-avatar" style="background:${ci2.bg};color:${ci2.fg}">${init}</div>
+      <div class="chk-info"><div class="n">${a.name}</div><div class="t">${tokenBadge(a.tokenInfo)}</div></div>
+    </label>`;
+  }).join('');
+}
+function selectAll(v){document.querySelectorAll('#acc-checklist input[type=checkbox]').forEach(cb=>{cb.checked=v;cb.closest('.chk-item').classList.toggle('selected',v);})}
+document.getElementById('acc-checklist').addEventListener('change',e=>{if(e.target.type==='checkbox')e.target.closest('.chk-item').classList.toggle('selected',e.target.checked);});
+
+function setType(type,btn){
+  postType=type;
+  document.querySelectorAll('.type-tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+  document.getElementById('img-section').style.display=type==='image'?'block':'none';
+  document.getElementById('vid-section').style.display=type==='video'?'block':'none';
+  document.getElementById('msg-label').textContent=type==='video'?'Video Description (optional)':'Post Message / Caption';
+}
+function previewFile(t){
+  const f=document.getElementById(`${t}-file`).files[0];if(!f)return;
+  document.getElementById(`${t}-fname`).textContent=f.name;
+  document.getElementById(`${t}-fsize`).textContent=(f.size/1024/1024).toFixed(1)+' MB';
+  document.getElementById(`${t}-preview`).style.display='flex';
+}
+function updateChar(){document.getElementById('char-n').textContent=document.getElementById('post-msg').value.length;}
+function clearCompose(){document.getElementById('post-msg').value='';document.getElementById('char-n').textContent=0;['img-file','vid-file'].forEach(id=>document.getElementById(id).value='');['img-preview','vid-preview'].forEach(id=>document.getElementById(id).style.display='none');document.getElementById('vid-title').value='';}
+
+async function sendPost(){
+  const msg=document.getElementById('post-msg').value.trim();
+  const selected=[...document.querySelectorAll('#acc-checklist input[type=checkbox]:checked')].map(cb=>cb.dataset.id);
+  if(!selected.length){showToast('Account select করো!','fail');return;}
+  const btn=document.getElementById('post-btn');
+  const fill=document.getElementById('progress-fill');
+  document.getElementById('progress-bar').style.display='block';
+  btn.disabled=true;btn.textContent='⏳ Posting...';fill.style.width='20%';
+  let results=[];
+  try{
+    if(postType==='text'){
+      if(!msg){showToast('Message লেখো!','fail');return;}
+      fill.style.width='50%';
+      const r=await fetch(`${API}/post/text`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accountIds:selected,message:msg})});
+      results=(await r.json()).results;
+    }else if(postType==='image'){
+      const f=document.getElementById('img-file').files[0];
+      if(!f){showToast('Image select করো!','fail');return;}
+      fill.style.width='40%';
+      const fd=new FormData();fd.append('image',f);fd.append('message',msg);fd.append('accountIds',JSON.stringify(selected));
+      const r=await fetch(`${API}/post/image`,{method:'POST',body:fd});
+      results=(await r.json()).results;
+    }else{
+      const f=document.getElementById('vid-file').files[0];
+      if(!f){showToast('Video select করো!','fail');return;}
+      fill.style.width='30%';showToast('Video upload হচ্ছে...','info');
+      const fd=new FormData();fd.append('video',f);fd.append('message',msg);fd.append('title',document.getElementById('vid-title').value);fd.append('accountIds',JSON.stringify(selected));
+      const r=await fetch(`${API}/post/video`,{method:'POST',body:fd});
+      results=(await r.json()).results;
+    }
+    fill.style.width='100%';
+    results.forEach(r=>logs.unshift({id:Date.now()+Math.random(),acc:r.name,status:r.ok?'ok':'fail',time:new Date().toLocaleString('bn-BD'),text:msg.slice(0,80)||'[media]',err:r.error,type:postType}));
+    totalPosts+=results.filter(r=>r.ok).length;updateStats();
+    const ok=results.filter(r=>r.ok).length,fail=results.filter(r=>!r.ok).length;
+    if(ok>0)showToast(`✅ ${ok}টি account-এ post হয়েছে!`,'ok');
+    if(fail>0)showToast(`❌ ${fail}টি fail — History দেখো`,'fail');
+  }catch(e){showToast('Error: '+e.message,'fail');}
+  finally{setTimeout(()=>{document.getElementById('progress-bar').style.display='none';fill.style.width='0%';},800);btn.disabled=false;btn.textContent='🚀 Post করো';}
+}
+
+function renderLogs(){
+  const c=document.getElementById('log-list');
+  if(!logs.length){c.innerHTML='<div class="empty"><div class="icon">📋</div>History নেই</div>';return;}
+  c.innerHTML=logs.map(l=>`<div class="log-item"><div class="log-icon ${l.status}">${l.status==='ok'?'✓':'✕'}</div><div class="log-body"><div class="log-top"><span class="log-name">${l.acc}</span><span class="badge ${l.status}">${l.status==='ok'?'সফল':'Failed'}</span><span style="font-size:11px;padding:2px 7px;background:var(--bg3);border-radius:99px;color:var(--text3)">${l.type||'text'}</span></div><div class="log-time">${l.time}</div>${l.text?`<div class="log-preview">${l.text}</div>`:''}${l.err?`<div class="log-err">⚠ ${l.err}</div>`:''}</div></div>`).join('');
+}
+function clearLogs(){logs=[];renderLogs();}
+function updateStats(){document.getElementById('s-acc').textContent=accounts.length;document.getElementById('s-posts').textContent=totalPosts;}
+function closeModal(){document.getElementById('modal').classList.remove('open');['m-name','m-pid','m-token','m-appid','m-appsecret'].forEach(id=>document.getElementById(id).value='');document.getElementById('token-result').style.display='none';document.getElementById('cred-box').classList.remove('open');}
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
+document.getElementById('refresh-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)document.getElementById('refresh-modal').classList.remove('open');});
+function showToast(msg,type='info'){const w=document.getElementById('toasts');const t=document.createElement('div');t.className=`toast ${type}`;t.textContent=msg;w.appendChild(t);setTimeout(()=>t.remove(),3500);}
+
+loadAccounts();
+</script>
+</body>
+</html>

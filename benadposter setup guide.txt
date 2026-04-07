@@ -1,0 +1,30 @@
+Step 1 — Node.js
+
+brandposter folder-এর ভেতরে right-click করো → "Open in Terminal" অথবা "Open PowerShell window here"
+
+তারপর এই command টা লেখো: node -v
+
+
+যদি এরকম দেখায় v18.0.0 বা যেকোনো number → Node আছে, Step 2
+
+যদি error দেখায় → nodejs.org থেকে LTS version download করে install করো, তারপর আবার চেষ্টা করো
+
+ Step 2 — Dependencies install করো
+
+npm install
+
+
+ Step 3 — Server চালু করো
+
+node server.js
+
+✅ BrandPoster চালু হয়েছে!
+🌐 Browser-এ যাও: http://localhost:3000
+
+
+Step 4 — Browser এ যাও
+
+http://localhost:3000
+
+
+
